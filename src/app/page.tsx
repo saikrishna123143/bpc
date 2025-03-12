@@ -2,10 +2,20 @@
 import React, { useState } from "react";
 import { jsPDF } from "jspdf";
 
-const Page = () => {
+interface Payments {
+  PineLabs: number;
+  PhonePe: number;
+  Cash: number;
+  UFill: number;
+  Rewards: number;
+  Bills: number;
+  Other: number;
+}
+
+const Page: React.FC = () => {
   const [liters, setLiters] = useState<number | "">("");
   const [pricePerLiter, setPricePerLiter] = useState<number | "">("");
-  const [payments, setPayments] = useState({
+  const [payments, setPayments] = useState<Payments>({
     PineLabs: 0,
     PhonePe: 0,
     Cash: 0,
@@ -18,7 +28,7 @@ const Page = () => {
   const totalPrice = liters && pricePerLiter ? liters * pricePerLiter : 0;
   const netAmount = totalPrice - Object.values(payments).reduce((a, b) => a + b, 0);
 
-  const handleAmountChange = (key: string, value: number) => {
+  const handleAmountChange = (key: keyof Payments, value: number) => {
     setPayments((prev) => ({ ...prev, [key]: prev[key] + value }));
   };
 
@@ -26,7 +36,7 @@ const Page = () => {
     const doc = new jsPDF();
     doc.setFont("helvetica", "normal");
     
-    const dateTime = new Date().toLocaleString(); // Get current date and time
+    const dateTime = new Date().toLocaleString();
 
     doc.text("BPCL Payment Invoice", 20, 10);
     doc.text(`Date & Time: ${dateTime}`, 20, 20);
@@ -51,34 +61,51 @@ const Page = () => {
       <InputField label="Price per Liter" value={pricePerLiter} setValue={setPricePerLiter} />
       {totalPrice > 0 && <AmountDisplay label="Total Price" amount={totalPrice} />}
       {Object.keys(payments).map((key) => (
-        <PaymentSection key={key} label={key} value={payments[key]} setValue={(value) => handleAmountChange(key, value)} />
+        <PaymentSection key={key} label={key} value={payments[key as keyof Payments]} setValue={(value) => handleAmountChange(key as keyof Payments, value)} />
       ))}
       <button onClick={generatePDF} className="w-full bg-blue-500 py-2 rounded mt-4">Download Invoice</button>
     </div>
   );
 };
 
-const InputField = ({ label, value, setValue }) => (
+interface InputFieldProps {
+  label: string;
+  value: number | "";
+  setValue: React.Dispatch<React.SetStateAction<number | "">>;
+}
+
+const InputField: React.FC<InputFieldProps> = ({ label, value, setValue }) => (
   <div className="mb-4">
     <label className="block text-sm mb-1">{label}</label>
     <input type="number" value={value} onChange={(e) => setValue(e.target.value ? parseFloat(e.target.value) : "")} className="w-full p-2 border rounded bg-gray-800 text-white" />
   </div>
 );
 
-const AmountDisplay = ({ label, amount }) => (
+interface AmountDisplayProps {
+  label: string;
+  amount: number;
+}
+
+const AmountDisplay: React.FC<AmountDisplayProps> = ({ label, amount }) => (
   <div className="mb-4 text-lg">
     <strong>{label}:</strong> ₹{amount.toFixed(2)}
   </div>
 );
 
-const PaymentSection = ({ label, value, setValue }) => {
-  const [inputValue, setInputValue] = useState("");
+interface PaymentSectionProps {
+  label: string;
+  value: number;
+  setValue: (value: number) => void;
+}
+
+const PaymentSection: React.FC<PaymentSectionProps> = ({ label, value, setValue }) => {
+  const [inputValue, setInputValue] = useState<string>("");
   return (
     <div className="mb-4">
       <label className="block text-sm mb-1">{label}</label>
       <div className="flex gap-2">
-        <input type="number" value={inputValue} onChange={(e) => setInputValue(parseFloat(e.target.value) || "")} className="w-full p-2 border rounded bg-gray-800 text-white" />
-        <button onClick={() => { setValue(parseFloat(inputValue)); setInputValue(""); }} className="bg-green-500 px-3 py-2 rounded text-white">Add</button>
+        <input type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} className="w-full p-2 border rounded bg-gray-800 text-white" />
+        <button onClick={() => { setValue(parseFloat(inputValue) || 0); setInputValue(""); }} className="bg-green-500 px-3 py-2 rounded text-white">Add</button>
       </div>
       {value > 0 && <AmountDisplay label={`${label} Total`} amount={value} />}
     </div>
