@@ -1,103 +1,88 @@
-import Image from "next/image";
+"use client";
+import React, { useState } from "react";
+import { jsPDF } from "jspdf";
 
-export default function Home() {
+const Page = () => {
+  const [liters, setLiters] = useState<number | "">("");
+  const [pricePerLiter, setPricePerLiter] = useState<number | "">("");
+  const [payments, setPayments] = useState({
+    PineLabs: 0,
+    PhonePe: 0,
+    Cash: 0,
+    UFill: 0,
+    Rewards: 0,
+    Bills: 0,
+    Other: 0,
+  });
+  
+  const totalPrice = liters && pricePerLiter ? liters * pricePerLiter : 0;
+  const netAmount = totalPrice - Object.values(payments).reduce((a, b) => a + b, 0);
+
+  const handleAmountChange = (key: string, value: number) => {
+    setPayments((prev) => ({ ...prev, [key]: prev[key] + value }));
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.setFont("helvetica", "normal");
+    
+    const dateTime = new Date().toLocaleString(); // Get current date and time
+
+    doc.text("BPCL Payment Invoice", 20, 10);
+    doc.text(`Date & Time: ${dateTime}`, 20, 20);
+    doc.text(`Liters: ${liters}`, 20, 30);
+    doc.text(`Price per Liter: ₹${pricePerLiter}`, 20, 40);
+    doc.text(`Total Price: ₹${totalPrice.toFixed(2)}`, 20, 50);
+    
+    let yOffset = 60;
+    Object.entries(payments).forEach(([key, value]) => {
+      doc.text(`${key}: ₹${value.toFixed(2)}`, 20, yOffset);
+      yOffset += 10;
+    });
+
+    doc.text(`Net Amount: ₹${netAmount.toFixed(2)}`, 20, yOffset + 10);
+    doc.save("invoice.pdf");
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="max-w-lg mx-auto mt-10 p-6 bg-gray-900 text-white rounded-lg shadow-md w-full sm:w-3/4 lg:w-1/2">
+      <h2 className="text-2xl font-semibold text-center mb-4">BPCL Payment</h2>
+      <InputField label="Liters" value={liters} setValue={setLiters} />
+      <InputField label="Price per Liter" value={pricePerLiter} setValue={setPricePerLiter} />
+      {totalPrice > 0 && <AmountDisplay label="Total Price" amount={totalPrice} />}
+      {Object.keys(payments).map((key) => (
+        <PaymentSection key={key} label={key} value={payments[key]} setValue={(value) => handleAmountChange(key, value)} />
+      ))}
+      <button onClick={generatePDF} className="w-full bg-blue-500 py-2 rounded mt-4">Download Invoice</button>
     </div>
   );
-}
+};
+
+const InputField = ({ label, value, setValue }) => (
+  <div className="mb-4">
+    <label className="block text-sm mb-1">{label}</label>
+    <input type="number" value={value} onChange={(e) => setValue(e.target.value ? parseFloat(e.target.value) : "")} className="w-full p-2 border rounded bg-gray-800 text-white" />
+  </div>
+);
+
+const AmountDisplay = ({ label, amount }) => (
+  <div className="mb-4 text-lg">
+    <strong>{label}:</strong> ₹{amount.toFixed(2)}
+  </div>
+);
+
+const PaymentSection = ({ label, value, setValue }) => {
+  const [inputValue, setInputValue] = useState("");
+  return (
+    <div className="mb-4">
+      <label className="block text-sm mb-1">{label}</label>
+      <div className="flex gap-2">
+        <input type="number" value={inputValue} onChange={(e) => setInputValue(parseFloat(e.target.value) || "")} className="w-full p-2 border rounded bg-gray-800 text-white" />
+        <button onClick={() => { setValue(parseFloat(inputValue)); setInputValue(""); }} className="bg-green-500 px-3 py-2 rounded text-white">Add</button>
+      </div>
+      {value > 0 && <AmountDisplay label={`${label} Total`} amount={value} />}
+    </div>
+  );
+};
+
+export default Page;
